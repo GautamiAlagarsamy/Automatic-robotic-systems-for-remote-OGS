@@ -50,7 +50,7 @@ while True:
             fontScale = 1
             color = (255, 0, 255)
             thickness = 2
-
+            cv2.rectangle(img, (x1, y1), (x2, y2), color, thickness)
             cv2.putText(img, classes[cls], org, font, fontScale, color, thickness, cv2.LINE_AA)
 
             # log intrusion object details to CSV file
