@@ -43,12 +43,12 @@ laser_on = True
 
 
 # time to wait before turning laser back on after no detections
-no_detection_timeout = 10  # seconds
+no_detection_timeout = 2  #seconds
 start_time = time.time()
 
 while True:
-    success, img = cap.read()
-    results = model(img, stream=True)
+    ret, frame = cap.read()
+    results = model(frame, stream=True)
 
     intrusion_detected= False
     intrusion_time = time.time()
@@ -77,30 +77,29 @@ while True:
             thickness = 2
 
             # draw bounding box and class name only if confidence is above threshold
-            if confidence > conf_thresh:
-                cv2.rectangle(img, (x1, y1), (x2, y2), color, thickness)
-                cv2.putText(img, classes[cls], org, font, fontScale, color, thickness, cv2.LINE_AA)
+            cv2.rectangle(frame, (x1, y1), (x2, y2), color, thickness)
+            cv2.putText(frame, classes[cls], org, font, fontScale, color, thickness, cv2.LINE_AA)
 
-            
-                intrusion_detected = True
-                intrusion_time = time.time()
-                status = dev.read_status_instruction(dev.INSTRUCT_READ_INTERLOCK_STATUS)
-                if intrusion_detected == True and status == 1:
+            status = dev.read_status_instruction(dev.INSTRUCT_READ_INTERLOCK_STATUS)
+            intrusion_detected = True
+            intrusion_time = time.time()
+
+            if intrusion_detected == True and status == 1:
+                    dev.set_status_instruction(dev.INSTRUCT_LASER_ACTIVATION, dev.OFF)
+                    dev.apply_all()
+                    print(f"Intrusion detected at {time.strftime('%H:%M:%S', time.localtime())}. Time taken: {time.time() - intrusion_time}seconds")
+
+            elif intrusion_detected == True and status == 0:
                     dev.set_status_instruction(dev.INSTRUCT_LASER_ACTIVATION, dev.OFF)
                     dev.apply_all()
                     print(f"Intrusion detected at {time.strftime('%H:%M:%S', time.localtime())}. Time taken: {time.time() - intrusion_time} seconds")
 
-                elif intrusion_detected == True and status == 0:
-                    dev.set_status_instruction(dev.INSTRUCT_LASER_ACTIVATION, dev.OFF)
-                    dev.apply_all()
-                    print(f"Intrusion detected at {time.strftime('%H:%M:%S', time.localtime())}. Time taken: {time.time() - intrusion_time} seconds")
-            else:
-                dev.set_status_instruction(dev.INSTRUCT_LASER_ACTIVATION, dev.ON)
-                dev.apply_all()
-                laser_on = True
-                print(f"No intrusion detected at {time.strftime('%H:%M:%S', time.localtime())}")
+    if not intrusion_detected:
+        dev.set_status_instruction(dev.INSTRUCT_LASER_ACTIVATION, dev.ON)
+        dev.apply_all()
+        print(f"No intrusion detected at {time.strftime('%H:%M:%S', time.localtime())}")
 
-    cv2.imshow('Webcam', img)
+    cv2.imshow('frame', frame)
     if cv2.waitKey(1) == ord('q'):
         break
 
