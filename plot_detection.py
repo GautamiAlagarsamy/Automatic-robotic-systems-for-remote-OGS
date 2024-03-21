@@ -33,4 +33,4 @@ if __name__ == "__main__":
     measurements = sys.argv[1:]
     measurements = np.array(measurements, dtype=float).reshape(-1, 3)
     process_measurements(measurements)
-    time.sleep(1)
+   
